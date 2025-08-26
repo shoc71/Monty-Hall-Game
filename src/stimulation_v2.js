@@ -6,6 +6,7 @@ let switchActivated = false
 let loopNumber = 3
 let doors = {}
 let emptyDoors = {}
+// test
 
 function getRandomInterger(min, max, loopNumber = 1) {
     tempArray = []
