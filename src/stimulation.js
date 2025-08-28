@@ -66,7 +66,7 @@ console.log(computerOptions[switchCheck])
 
 if (String(computerChoice) !== computerOptions[switchCheck]) {
     console.log(`Switch Activated`)
-    switchActivated = true
+    switchCheck = true
     computerChoice = computerOptions[switchCheck]
     // console.log(`Computer Choice: ${computerChoice}`)
 }  else {
