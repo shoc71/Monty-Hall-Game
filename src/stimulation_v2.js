@@ -13,6 +13,27 @@ let doors = {}
 let emptyDoors = {}
 
 /**
+ * 50% Random chance of returning True/False 
+ * @returns Boolean value
+ */
+function getRandomBoolean() {
+   return (Math.random() < 0.5) // will output either true or false
+}
+
+/**
+ * Shuffling Array using Durstenfeld shuffle (Optimized Fisher–Yates (aka Knuth) Shuffle).
+ * 
+ * @param {Array} list - List for shuffling
+ * @returns - Returns shuffled array
+ */
+function shuffleArray(list) {
+    for (var i = list.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        [list[i], list[j]] = [list[j], list[i]];
+    }
+}
+
+/**
  * Assigning Random (Array) of Numbers to a given variable. LoopNumber > 1, for an Array<String> values
  * 
  * @param {Interger} min 
@@ -71,50 +92,107 @@ function assignDoorValues (doorOptions, winnerDoorText, LosingDoorText) {
  * Collecting all Empty/Losing Doors into an Object for future runs and reference. Returns all "empty" doors
  * 
  * @param {{ [key: String]: string }} allDoors - \allDoors\ All Doors Object with both winningValues and losingValues
- * @param {{ [key: String]: string }} losingDoors - \losingDoors\ Object to collect all losingValue Doors
+ * @param {{ [key: String]: string }} newDoors - \losingDoors\ Object to collect all losingValue Doors
+ * @param {String} doorText - \doorText\ String used for filtering
+ * @param {Boolean} xor - \xor\ Whether to include or exclude the string when filtering
  * @returns {{ [key: String]: string }} - Returning losingDoors Object keys and values from allDoors
  * 
  */
-function collectingEmptyDoors(allDoors, losingDoors, losingDoorText) {
-    for (const key in allDoors) {
-        if (allDoors[key] === losingDoorText) {
-            losingDoors[key] = allDoors[key]
+function collectingDoorData(allDoors, newDoors, doorText, xor = false) {
+    
+    if (xor === true) {
+        for (const key in allDoors) {
+            if (allDoors[key] !== doorText) {
+                newDoors[key] = allDoors[key]
+            }
         }
+        return newDoors
     }
+    
+    if (xor === false) {
+        for (const key in allDoors) {
+            if (allDoors[key] === doorText) {
+                newDoors[key] = allDoors[key]
+            }
+        }
+        return newDoors
+    }  
+}
+
+/**
+ * Opening Empty Doors
+ * 
+ * @param {Object} allDoors - \allDoors\ All Doors Object with winningValues, losingValues, and OpenedValues
+ * @param {Object} losingDoors - \losingDoors\ Object to filter out all losingValue Doors
+ * @param {String} computerChoice - computerchoice as a String/Array is remember
+ * @param {String} OpenedDoorText - String used for filtering
+ * @returns {{ [key: String]: string }} - Returning losingDoors Object keys and values from allDoors
+ */
+function openEmptyDoor (allDoors, losingDoors, computerChoice, OpenedDoorText) {
+
+    let randomSelection = selectingRandomDoor(losingDoors, computerChoice)
+
+    allDoors[randomSelection] = OpenedDoorText
+    delete losingDoors[randomSelection]
+    
+    // console.log(`Opened Door: ${randomSelection}`)
 
     return losingDoors
 }
 
 /**
+ * Selecting Random Door
  * 
- * @param {Object} allDoors - \allDoors\ All Doors Object with winningValues, losingValues, and OpenedValues
- * @param {Object} losingDoors - \losingDoors\ Object to filter out all losingValue Doors
- * @param {String} computerChoice - computerchoice as a String/Array is remember
- * @param {String} OpenedDoorText - Open Door Text
- * @returns {{ [key: String]: string }} - Returning losingDoors Object keys and values from allDoors
+ * @param {Object} losingDoors - Objects doors to select keys 
+ * @param {Array} computerChoice - Optional as String but Array to filter out from Object Options
+ * @returns {String} - Returns a random key of the dictionary as a string
  */
-function openEmptyDoor (allDoors, losingDoors, computerChoice, OpenedDoorText) {
-
+function selectingRandomDoor(losingDoors, computerChoice) {
     const computerChoiceArray = Array.isArray(computerChoice) ? computerChoice : [computerChoice];
 
     let randomDoor = Object.keys(losingDoors).filter(key => !computerChoiceArray.includes(key))
     let randomSelection = randomDoor[Math.floor(Math.random() * randomDoor.length)]
 
-    allDoors[randomSelection] = OpenedDoorText
-    delete losingDoors[randomSelection]
-    
-    console.log(`Opened Door: ${randomSelection}`)
+    return randomSelection
+}
 
-    return losingDoors
+/**
+ * Checking whether the computer makes a switch for the door or not
+ * 
+ * @param {Object} allDoors - \allDoors\ All Doors Object with winningValues, losingValues, and OpenedValues
+ * @param {Object} losingDoors - \losingDoors\ Object to filter out all losingValue Doors
+ * @param {Array} computerChoice - Optional as String but Array to filter out from Object Options
+ * @param {String} OpenedDoorText - String used for filtering
+ * @returns 
+ */
+function switchAttempt(allDoors, losingDoors, computerChoice, OpenedDoorText) {
+    
+    let shuffledChoices = shuffleArray(computerChoice)
+    const computerOptions = collectingDoorData(allDoors, losingDoors, OpenedDoorText, xor = true)
+    const randomOption = selectingRandomDoor(computerOptions, shuffledChoices)
+    const switchOption = getRandomBoolean();
+
+    console.log(randomOption)
+
+    if (switchOption === true) {
+        console.log(`Switch Activated`)
+        computerChoice.pop()
+        computerChoice.push(randomOption)
+    } else {
+        // computerChoice = String(computerChoice)
+        console.log(`Chose to Stay`)
+    }
+
+    return computerChoice
 }
 
 let victoryDoor = getRandomInterger(minRange, maxRange, loopNumber);
 let computerChoice = getRandomInterger(minRange, maxRange, 2);
 
 assignDoorValues(doors, winnerDoorText, LosingDoorText)
-console.log(doors)
+// console.log(doors)
 
-emptyDoors = collectingEmptyDoors(doors, emptyDoors, LosingDoorText)
+emptyDoors = collectingDoorData(doors, emptyDoors, LosingDoorText)
 
 console.log("Computer Choice: " + computerChoice)
 
@@ -127,20 +205,7 @@ console.log(victoryDoor)
 console.log(emptyDoors)
 console.log(doors)
 
-function switchAttempt(allDoors, losingDoors, computerChoice, OpenedDoorText) {
+switchAttempt(doors, emptyDoors, computerChoice, OpenedDoorText)
 
-    const computerChoiceArray = Array.isArray(computerChoice) ? computerChoice : [computerChoice];
-    computerOptions = []
+console.log(computerChoice)
 
-    for (const key in allDoors) {
-        if (allDoors[key] !== OpenedDoorText) {
-            computerOptions.push(key)
-        }
-    }
-
-    return computerOptions
-
-
-}
-
-console.log(switchAttempt(doors, emptyDoors, computerChoice, OpenedDoorText))
